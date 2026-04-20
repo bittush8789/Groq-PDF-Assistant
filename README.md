@@ -1,137 +1,146 @@
-# DocuQA | PDF Chatbot Platform
+# 📄 DocuQA: Enterprise-Grade AI PDF Chatbot
 
-![DocuQA Dashboard](./placeholder-screenshot.png)
+![Banner](https://raw.githubusercontent.com/bittush8789/Groq-PDF-Assistant/main/docs/banner.png)
 
-A production-ready SaaS application allowing users to upload PDF documents and ask questions using an advanced RAG (Retrieval-Augmented Generation) pipeline powered by Generative AI.
+## 🌟 Overview
+**DocuQA** is a high-performance, production-ready AI application that allows users to upload multiple PDF documents and engage in intelligent, context-aware conversations. It leverages **Retrieval-Augmented Generation (RAG)** with ultra-fast inference via **Groq** and robust embeddings from **Google Gemini**.
 
-## 🚀 Features
+This repository follows industry-standard **LLMOps**, **DevOps**, and **GitOps** practices, featuring a fully automated CI/CD pipeline and Kubernetes-native deployment.
 
-- **Multi-PDF Support**: Upload multiple documents and search across all of them simultaneously.
-- **Advanced RAG Pipeline**: Intelligent text chunking, embedding generation, and fast vector search.
-- **Accurate Citations**: Answers include references to the specific page number and document name.
-- **Modern SaaS UI**: Responsive, beautiful interface built with pure HTML/CSS/JS (no heavy frontend frameworks).
-- **Dark/Light Mode**: First-class support for theming.
-- **Production Ready Backend**: Asynchronous FastAPI implementation.
-- **DevOps Ready**: Docker and Kubernetes configurations included out of the box.
+---
 
-## 🏗 Architecture Diagram
-
+## 🏗 Architecture
 ```mermaid
 graph TD
-    A[User UI] -->|Upload PDF| B(FastAPI Backend)
-    A -->|Ask Question| B
-    B -->|Process Background| C{PDF Loader & Chunking}
-    C -->|Store Embeddings| D[(FAISS Vector DB)]
-    B -->|Retrieve Context| D
-    D -->|Context Chunks| E(LangChain Agent)
-    E -->|Prompt + Context| F[Google Gemini API]
-    F -->|Answer| E
-    E -->|Formatted Response| B
-    B -->|Answer + Citations| A
+    User((User)) -->|Upload PDF| Streamlit[Streamlit UI]
+    Streamlit -->|Process| PDFLoader[PyPDFLoader]
+    PDFLoader -->|Chunks| TextSplitter[Recursive Text Splitter]
+    TextSplitter -->|Embed| GeminiEmbed[Gemini Embedding API]
+    GeminiEmbed -->|Store| FAISS[(FAISS Vector Store)]
+    User -->|Ask Question| Streamlit
+    Streamlit -->|Query| Retriever[FAISS Retriever]
+    Retriever -->|Context| RAGChain[LangChain RAG Chain]
+    RAGChain -->|Inference| Groq[Groq Llama 3.3]
+    Groq -->|Answer| User
 ```
+
+---
+
+## 🚀 Features
+- **Multi-Provider AI**: Supports **Groq (Llama 3.3)** and **Google Gemini (2.0 Flash)**.
+- **RAG Pipeline**: Advanced document chunking and retrieval using **FAISS**.
+- **Production UI**: Premium dark-themed Streamlit interface with sidebar management.
+- **Scalable Infrastructure**: Containerized with **Docker** and orchestrated by **Kubernetes**.
+- **GitOps Workflow**: Automated deployments via **ArgoCD**.
+- **Observability**: Built-in logging and health checks.
+
+---
 
 ## 🛠 Tech Stack
+| Category | Technology |
+| :--- | :--- |
+| **Frontend/App** | Streamlit |
+| **AI Framework** | LangChain |
+| **LLM Provider** | Groq (Llama 3.3), Google Gemini |
+| **Embeddings** | Google Gemini (text-embedding-004) |
+| **Vector DB** | FAISS |
+| **Containerization** | Docker |
+| **Orchestration** | Kubernetes (Kind Cluster) |
+| **CI/CD** | GitHub Actions |
+| **GitOps** | ArgoCD |
 
-**Frontend:**
-- HTML5, Vanilla CSS3 (Custom Design System)
-- Vanilla JavaScript (Async/Await Fetch API)
+---
 
-**Backend:**
-- Python 3.10+, FastAPI
-- LangChain framework
-- Google Gemini API (LLM & Embeddings)
-- PyMuPDF / LangChain PyPDFLoader
-- FAISS (Vector Store)
-
-**DevOps:**
+## 📋 Prerequisites
+- Python 3.11+
 - Docker & Docker Compose
-- Nginx
-- Kubernetes Manifests
+- Kind (for local K8s testing)
+- kubectl
+- Groq & Gemini API Keys
 
-## ⚙️ Setup & Installation
+---
 
-### 1. Prerequisites
-- Python 3.10+
-- Docker and Docker Compose (optional for containerized deployment)
-- API Key from [Google AI Studio](https://aistudio.google.com/)
+## ⚙️ Environment Variables
+Create a `.env` file in the root directory:
+| Variable | Description |
+| :--- | :--- |
+| `GEMINI_API_KEY` | Your Google AI Studio API Key |
+| `GROQ_API_KEY` | Your Groq Cloud API Key |
 
-### 2. Local Setup
+---
 
-Clone the repository:
+## 🚀 Local Development
+
+### 1. Manual Setup
 ```bash
-git clone https://github.com/your-username/pdf-chatbot.git
-cd pdf-chatbot
-```
+# Clone the repository
+git clone https://github.com/bittush8789/Groq-PDF-Assistant.git
+cd Groq-PDF-Assistant
 
-Setup Environment variables:
-```bash
-cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
-```
-
-Install Backend Dependencies:
-```bash
-cd backend
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Run the app
+streamlit run app.py
 ```
 
-Run Backend:
+### 2. Docker Setup
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# Build and run with Docker Compose
+docker-compose up --build
 ```
 
-Run Frontend:
-You can simply open `frontend/index.html` in your browser or use a simple HTTP server:
+---
+
+## ☸️ Kubernetes Deployment (Kind)
+
+### 1. Create Cluster
 ```bash
-cd ../frontend
-python -m http.server 3000
-```
-Navigate to `http://localhost:3000`
-
-### 3. Docker Deployment
-
-```bash
-docker-compose up --build -d
-```
-The application will be available at `http://localhost`.
-
-## 📚 API Documentation
-
-Once the backend is running, visit:
-- **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
-
-### Key Endpoints:
-- `POST /upload-pdf`: Upload multiple PDF files.
-- `POST /chat`: Send a query and receive an answer with citations.
-- `GET /history`: Fetch current session chat history.
-- `DELETE /chat-history`: Clear chat history.
-- `GET /health`: System health check.
-- `GET /metrics`: Basic usage metrics.
-
-## 🚢 Kubernetes Deployment
-
-1. Create a secret for your API key:
-```bash
-kubectl create secret generic pdf-chatbot-secrets --from-literal=gemini-api-key="your-api-key"
+kind create cluster --name docuqa
 ```
 
-2. Apply manifests:
+### 2. Deploy Manifests
 ```bash
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/resources.yaml
 kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
 ```
 
-## 🐛 Troubleshooting
+### 3. Verify
+```bash
+kubectl get pods -n docuqa
+kubectl port-forward svc/docuqa-service 8501:80 -n docuqa
+```
 
-- **Missing Vector DB error**: Ensure the `backend/vector_store_db` directory is writable.
-- **Empty Responses**: Check if you have uploaded a valid text-based PDF. Scanned PDFs without OCR may yield empty text.
+---
 
-## 🗺 Future Roadmap
-- [ ] Implement OCR for scanned PDFs (Tesseract).
-- [ ] Add User Authentication (OAuth / JWT).
-- [ ] Implement Stripe for SaaS billing tiers.
-- [ ] Add Postgres database for persistent user chat history.
-- [ ] Export summary to DOCX/PDF.
+## 🔁 CI/CD & GitOps
+- **GitHub Actions**: Automatically builds and pushes Docker images on every push to `main`.
+- **ArgoCD**: Monitors the `k8s/` directory and synchronizes the cluster state automatically.
+
+To install ArgoCD:
+```bash
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
+---
+
+## 🔐 Security Best Practices
+- **Non-Root Container**: Dockerfile runs as a non-privileged `streamlit` user.
+- **Secret Management**: API keys are handled via K8s Secrets and ConfigMaps.
+- **Health Checks**: Liveness and Readiness probes configured in Kubernetes.
+
+---
+
+## 🤝 Contributing
+Contributions are welcome! Please open an issue or submit a pull request.
+
+---
+
+## 📄 License
+Distributed under the MIT License. See `LICENSE` for more information.

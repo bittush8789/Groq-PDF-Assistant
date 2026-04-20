@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    image: docuqa-app:local
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/uploads
+      - ./vector_store_db:/app/vector_store_db
+    restart: always

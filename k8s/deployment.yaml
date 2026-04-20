@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamlit-app
+  namespace: docuqa
+  labels:
+    app: docuqa
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: docuqa
+  template:
+    metadata:
+      labels:
+        app: docuqa
+    spec:
+      containers:
+      - name: docuqa
+        image: docuqa-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8501
+        envFrom:
+        - configMapRef:
+            name: docuqa-config
+        - secretRef:
+            name: docuqa-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: storage
+          mountPath: /app/uploads
+        - name: vector-db
+          mountPath: /app/vector_store_db
+      volumes:
+      - name: storage
+        emptyDir: {}
+      - name: vector-db
+        emptyDir: {}
