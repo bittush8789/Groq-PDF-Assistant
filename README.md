@@ -51,81 +51,111 @@ graph TD
 
 ---
 
-## 📋 Prerequisites
-- Python 3.11+
-- Docker & Docker Compose
-- Kind (for local K8s testing)
-- kubectl
-- Groq & Gemini API Keys
+## 🛠️ Tool Installation Guide
+
+Before starting, ensure you have the following tools installed. If not, follow these quick guides:
+
+### 1. Docker & Docker Compose
+- **Windows/Mac**: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+- **Linux**:
+  ```bash
+  sudo apt update && sudo apt install docker.io docker-compose -y
+  sudo usermod -aG docker $USER && newgrp docker
+  ```
+
+### 2. Kubernetes CLI (kubectl)
+- **Windows (Chocolatey)**: `choco install kubernetes-cli`
+- **Mac (Homebrew)**: `brew install kubectl`
+- **Linux**:
+  ```bash
+  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+  chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+  ```
+
+### 3. Local K8s Cluster (Kind)
+- **Installation**:
+  ```bash
+  # Go
+  go install sigs.k8s.io/kind@v0.20.0
+  # Mac/Linux (Binary)
+  curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+  chmod +x ./kind && sudo mv ./kind /usr/local/bin/
+  ```
+
+### 4. ArgoCD CLI
+- **Installation**:
+  ```bash
+  curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+  sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+  rm argocd-linux-amd64
+  ```
 
 ---
 
-## ⚙️ Environment Variables
-Create a `.env` file in the root directory:
-| Variable | Description |
-| :--- | :--- |
-| `GEMINI_API_KEY` | Your Google AI Studio API Key |
-| `GROQ_API_KEY` | Your Groq Cloud API Key |
+## 🚀 End-to-End Execution Guide
 
----
+Follow these steps to deploy the application from scratch:
 
-## 🚀 Local Development
-
-### 1. Manual Setup
+### Step 1: Clone & Configure
 ```bash
-# Clone the repository
 git clone https://github.com/bittush8789/Groq-PDF-Assistant.git
 cd Groq-PDF-Assistant
 
-# Create virtual environment
+# Create .env file
+cat <<EOF > .env
+GEMINI_API_KEY=your_gemini_key
+GROQ_API_KEY=your_groq_key
+EOF
+```
+
+### Step 2: Local Development (Optional)
+```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# Run the app
 streamlit run app.py
 ```
 
-### 2. Docker Setup
+### Step 3: Containerize & Test
 ```bash
-# Build and run with Docker Compose
-docker-compose up --build
+# Build the production image
+docker build -t docuqa-app:v1 .
+
+# Run locally via Docker
+docker run -p 8501:8501 --env-file .env docuqa-app:v1
 ```
 
----
-
-## ☸️ Kubernetes Deployment (Kind)
-
-### 1. Create Cluster
+### Step 4: Deploy to Kubernetes (Kind)
 ```bash
-kind create cluster --name docuqa
-```
+# 1. Create Cluster
+kind create cluster --name docuqa-cluster
 
-### 2. Deploy Manifests
-```bash
-kubectl apply -f k8s/namespace.yaml
+# 2. Load Image into Kind (If using local image)
+kind load docker-image docuqa-app:v1 --name docuqa-cluster
+
+# 3. Create Namespace
+kubectl create namespace docuqa
+
+# 4. Apply Manifests
 kubectl apply -f k8s/resources.yaml
 kubectl apply -f k8s/deployment.yaml
-```
 
-### 3. Verify
-```bash
-kubectl get pods -n docuqa
+# 5. Verify & Access
+kubectl get all -n docuqa
 kubectl port-forward svc/docuqa-service 8501:80 -n docuqa
 ```
 
----
-
-## 🔁 CI/CD & GitOps
-- **GitHub Actions**: Automatically builds and pushes Docker images on every push to `main`.
-- **ArgoCD**: Monitors the `k8s/` directory and synchronizes the cluster state automatically.
-
-To install ArgoCD:
+### Step 5: Setup GitOps (ArgoCD)
 ```bash
+# 1. Install ArgoCD in Cluster
 kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# 2. Access ArgoCD UI
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+# 3. Deploy the App via ArgoCD
+kubectl apply -f argocd/application.yaml
 ```
 
 ---
